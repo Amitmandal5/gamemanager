@@ -1,0 +1,14 @@
+c:\Users\hp\GameManager\bin\Debug\net9.0\GameManager.exe
+C:\Users\hp\GameManager\bin\Debug\net9.0\GameManager.deps.json
+C:\Users\hp\GameManager\bin\Debug\net9.0\GameManager.runtimeconfig.json
+c:\Users\hp\GameManager\bin\Debug\net9.0\GameManager.dll
+c:\Users\hp\GameManager\bin\Debug\net9.0\GameManager.pdb
+c:\Users\hp\GameManager\obj\Debug\net9.0\GameManager.GeneratedMSBuildEditorConfig.editorconfig
+c:\Users\hp\GameManager\obj\Debug\net9.0\GameManager.AssemblyInfoInputs.cache
+c:\Users\hp\GameManager\obj\Debug\net9.0\GameManager.AssemblyInfo.cs
+c:\Users\hp\GameManager\obj\Debug\net9.0\GameManager.csproj.CoreCompileInputs.cache
+c:\Users\hp\GameManager\obj\Debug\net9.0\GameManager.dll
+c:\Users\hp\GameManager\obj\Debug\net9.0\refint\GameManager.dll
+c:\Users\hp\GameManager\obj\Debug\net9.0\GameManager.pdb
+C:\Users\hp\GameManager\obj\Debug\net9.0\GameManager.genruntimeconfig.cache
+C:\Users\hp\GameManager\obj\Debug\net9.0\ref\GameManager.dll
