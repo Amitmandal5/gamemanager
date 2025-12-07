@@ -12,3 +12,4 @@ c:\Users\hp\GameManager\obj\Debug\net9.0\refint\GameManager.dll
 c:\Users\hp\GameManager\obj\Debug\net9.0\GameManager.pdb
 C:\Users\hp\GameManager\obj\Debug\net9.0\GameManager.genruntimeconfig.cache
 C:\Users\hp\GameManager\obj\Debug\net9.0\ref\GameManager.dll
+c:\Users\hp\GameManager\obj\Debug\net9.0\GameManager.sourcelink.json

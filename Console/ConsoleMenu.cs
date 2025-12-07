@@ -23,6 +23,7 @@ namespace GameManager.ConsoleApp
                 Console.WriteLine("\n=== Game Manager ===");
                 Console.WriteLine("1. Add Player");
                 Console.WriteLine("2. List All Players");
+                Console.WriteLine("3. Update Player Stats"); // NEW OPTION
                 Console.WriteLine("0. Exit");
                 Console.Write("Choose option: ");
 
@@ -36,6 +37,10 @@ namespace GameManager.ConsoleApp
 
                     case "2":
                         ShowPlayers();
+                        break;
+
+                    case "3":
+                        UpdatePlayerStatsFlow(); // NEW FLOW
                         break;
 
                     case "0":
@@ -79,6 +84,62 @@ namespace GameManager.ConsoleApp
             foreach (var p in players)
             {
                 Console.WriteLine(p);
+            }
+        }
+
+        // NEW: Update stats (hours and high score) for an existing player.
+        private void UpdatePlayerStatsFlow()
+        {
+            Console.Write("Enter player ID: ");
+            string idText = Console.ReadLine();
+
+            if (!Guid.TryParse(idText, out Guid id))
+            {
+                Console.WriteLine("Invalid ID format. It should be a GUID.");
+                return;
+            }
+
+            // Ask how many hours to add
+            Console.Write("Hours to add (can be 0): ");
+            string hoursText = Console.ReadLine();
+            if (!int.TryParse(hoursText, out int hoursToAdd))
+            {
+                Console.WriteLine("Hours must be a whole number.");
+                return;
+            }
+
+            // Ask for new high score, but allow user to skip
+            Console.Write("New high score (leave empty to keep current): ");
+            string scoreText = Console.ReadLine();
+            int? newHighScore = null;
+
+            if (!string.IsNullOrWhiteSpace(scoreText))
+            {
+                if (!int.TryParse(scoreText, out int parsedScore))
+                {
+                    Console.WriteLine("High score must be a number.");
+                    return;
+                }
+                newHighScore = parsedScore;
+            }
+
+            try
+            {
+                bool updated = _repo.UpdateStats(id, hoursToAdd, newHighScore);
+
+                if (!updated)
+                {
+                    Console.WriteLine("Player not found with that ID.");
+                    return;
+                }
+
+                Console.WriteLine("Player stats updated successfully.");
+                Player p = _repo.GetById(id);
+                Console.WriteLine(p);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Failed to update stats: " + ex.Message);
             }
         }
     }
