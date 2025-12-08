@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using GameManager.Models;
 
 namespace GameManager.Services
 {
     // Simple repository responsible for storing and managing players.
-    // Right now it only keeps data in memory. We will add saving/loading later.
+    // It keeps data in memory for now. Later we will add saving/loading to file.
     public class PlayerRepository
     {
         private List<Player> _players = new List<Player>();
@@ -38,7 +39,7 @@ namespace GameManager.Services
             return _players;
         }
 
-        // Find a player by their Guid ID.
+        // Find a player by their Guid ID. Returns null if not found.
         public Player GetById(Guid id)
         {
             foreach (var p in _players)
@@ -58,7 +59,7 @@ namespace GameManager.Services
             Player target = GetById(playerId);
             if (target == null)
             {
-                return false; // player not found
+                return false; 
             }
 
             if (hoursToAdd < 0)
@@ -77,6 +78,81 @@ namespace GameManager.Services
             }
 
             return true;
+        }
+
+        // ----------- NEW: Search and Reports -----------------
+
+      
+        // This is a simple linear search algorithm.
+        public List<Player> SearchByUsername(string term)
+        {
+            List<Player> results = new List<Player>();
+
+            if (string.IsNullOrWhiteSpace(term))
+                return results;
+
+            string lowerTerm = term.Trim().ToLower();
+
+            foreach (var p in _players)
+            {
+                string name = (p.Username ?? "").ToLower();
+                if (name.Contains(lowerTerm))
+                {
+                    results.Add(p);
+                }
+            }
+
+            return results;
+        }
+
+        // Get top N players sorted by high score (descending),
+        // using a manual insertion sort on a copy of the list.
+        public List<Player> GetTopByHighScore(int topN)
+        {
+            if (topN <= 0)
+                return new List<Player>();
+
+            // Work on a copy so we do not break original order.
+            List<Player> copy = new List<Player>(_players);
+
+            // Insertion sort (descending by HighScore).
+            for (int i = 1; i < copy.Count; i++)
+            {
+                Player current = copy[i];
+                int j = i - 1;
+
+                // move items that are smaller to the right
+                while (j >= 0 && copy[j].HighScore < current.HighScore)
+                {
+                    copy[j + 1] = copy[j];
+                    j--;
+                }
+
+                copy[j + 1] = current;
+            }
+
+            // Take top N items (or all if fewer).
+            if (topN > copy.Count)
+                topN = copy.Count;
+
+            return copy.GetRange(0, topN);
+        }
+
+        // Get top N most active players (by HoursPlayed) using built-in sort.
+        
+        public List<Player> GetMostActiveByHours(int topN)
+        {
+            if (topN <= 0)
+                return new List<Player>();
+
+            var sorted = _players
+                .OrderByDescending(p => p.HoursPlayed)
+                .ToList();
+
+            if (topN > sorted.Count)
+                topN = sorted.Count;
+
+            return sorted.GetRange(0, topN);
         }
     }
 }
