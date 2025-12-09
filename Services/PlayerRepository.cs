@@ -5,32 +5,46 @@ using GameManager.Models;
 
 namespace GameManager.Services
 {
-    // Simple repository responsible for storing and managing players.
-    // It keeps data in memory for now. Later we will add saving/loading to file.
+   
     public class PlayerRepository
     {
         private List<Player> _players = new List<Player>();
 
-        // Add a new player with validation.
-        public Player AddPlayer(string username)
+       
+        public Player AddPlayer(string username, bool isPro)
         {
             if (string.IsNullOrWhiteSpace(username))
                 throw new Exception("Username cannot be empty.");
 
-            // Avoid duplicate usernames (case insensitive).
             foreach (var p in _players)
             {
                 if (p.Username.Equals(username, StringComparison.OrdinalIgnoreCase))
                     throw new Exception("This username already exists.");
             }
 
-            Player newPlayer = new Player
+            Player newPlayer;
+
+            if (isPro)
             {
-                Username = username.Trim()
-            };
+            
+                newPlayer = new ProPlayer();
+            }
+            else
+            {
+                // create a normal Player
+                newPlayer = new Player();
+            }
+
+            newPlayer.Username = username.Trim();
 
             _players.Add(newPlayer);
             return newPlayer;
+        }
+
+        // Overload for backward compatibility if needed.
+        public Player AddPlayer(string username)
+        {
+            return AddPlayer(username, false);
         }
 
         // Get all players.
@@ -59,7 +73,7 @@ namespace GameManager.Services
             Player target = GetById(playerId);
             if (target == null)
             {
-                return false; 
+                return false; // player not found
             }
 
             if (hoursToAdd < 0)
@@ -80,9 +94,7 @@ namespace GameManager.Services
             return true;
         }
 
-        // ----------- NEW: Search and Reports -----------------
-
-      
+        // Search by username (case-insensitive, partial match).
         // This is a simple linear search algorithm.
         public List<Player> SearchByUsername(string term)
         {
@@ -105,7 +117,6 @@ namespace GameManager.Services
             return results;
         }
 
-        // Get top N players sorted by high score (descending),
         // using a manual insertion sort on a copy of the list.
         public List<Player> GetTopByHighScore(int topN)
         {
@@ -139,7 +150,6 @@ namespace GameManager.Services
         }
 
         // Get top N most active players (by HoursPlayed) using built-in sort.
-        
         public List<Player> GetMostActiveByHours(int topN)
         {
             if (topN <= 0)

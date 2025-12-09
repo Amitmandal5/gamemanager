@@ -25,8 +25,8 @@ namespace GameManager.ConsoleApp
                 Console.WriteLine("1. Add Player");
                 Console.WriteLine("2. List All Players");
                 Console.WriteLine("3. Update Player Stats");
-                Console.WriteLine("4. Search Players");               
-                Console.WriteLine("5. Reports (Top / Active)");      
+                Console.WriteLine("4. Search Players");
+                Console.WriteLine("5. Reports (Top / Active)");
                 Console.WriteLine("0. Exit");
                 Console.Write("Choose option: ");
 
@@ -70,9 +70,13 @@ namespace GameManager.ConsoleApp
             Console.Write("Enter username: ");
             string username = Console.ReadLine();
 
+            Console.Write("Is this a pro player? (y/n): ");
+            string proInput = (Console.ReadLine() ?? "").Trim().ToLower();
+            bool isPro = (proInput == "y" || proInput == "yes");
+
             try
             {
-                Player p = _repo.AddPlayer(username);
+                Player p = _repo.AddPlayer(username, isPro);
                 Console.WriteLine("Player added successfully!");
                 Console.WriteLine(p);
             }
@@ -151,8 +155,6 @@ namespace GameManager.ConsoleApp
             }
         }
 
-        // ------------- NEW: Search flow ----------------
-
         private void SearchPlayersFlow()
         {
             Console.WriteLine("\nSearch by:");
@@ -217,8 +219,6 @@ namespace GameManager.ConsoleApp
                 Console.WriteLine(p);
             }
         }
-
-        // ------------- NEW: Reports flow ----------------
 
         private void ReportsFlow()
         {
