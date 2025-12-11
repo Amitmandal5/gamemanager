@@ -1,0 +1,4 @@
+[2025-12-11 08:33:08] [INFO] Data file 'Data/players.json' not found. Starting with empty list.
+[2025-12-11 08:33:08] [INFO] Application started.
+[2025-12-11 08:33:27] [INFO] Added player 'warrior' (ID: cc4e1bb7-7cd2-4d0d-b8a5-53d84449e750) (Pro: True)
+[2025-12-11 08:33:27] [INFO] Saved 1 player(s) to 'Data/players.json'.

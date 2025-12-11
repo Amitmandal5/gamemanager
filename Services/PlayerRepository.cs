@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
 using GameManager.Models;
 
 namespace GameManager.Services
@@ -9,13 +11,97 @@ namespace GameManager.Services
     public class PlayerRepository
     {
         private List<Player> _players = new List<Player>();
+        private readonly Logger _logger;
+        private readonly string _dataFilePath;
 
-       
+        public PlayerRepository(Logger logger, string dataFilePath)
+        {
+            _logger = logger;
+            _dataFilePath = dataFilePath;
+
+            // Make sure data folder exists.
+            string? folder = Path.GetDirectoryName(_dataFilePath);
+            if (!string.IsNullOrWhiteSpace(folder) && !Directory.Exists(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
+        }
+
+        // ----------------- JSON persistence -----------------
+
+        public void LoadFromFile()
+        {
+            if (!File.Exists(_dataFilePath))
+            {
+                _logger.Info($"Data file '{_dataFilePath}' not found. Starting with empty list.");
+                return;
+            }
+
+            try
+            {
+                string json = File.ReadAllText(_dataFilePath);
+
+                if (string.IsNullOrWhiteSpace(json))
+                {
+                    _logger.Warning($"Data file '{_dataFilePath}' is empty. No players loaded.");
+                    return;
+                }
+
+                var loaded = JsonSerializer.Deserialize<List<Player>>(json,
+                    new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                if (loaded == null)
+                {
+                    _logger.Warning("Could not deserialize players. Starting with empty list.");
+                    return;
+                }
+
+                _players = loaded;
+                _logger.Info($"Loaded {_players.Count} player(s) from '{_dataFilePath}'.");
+            }
+            catch (JsonException ex)
+            {
+                _logger.Error("JSON in data file is not valid: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("Error while reading data file: " + ex.Message);
+            }
+        }
+
+        public void SaveToFile()
+        {
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                };
+
+                string json = JsonSerializer.Serialize(_players, options);
+                File.WriteAllText(_dataFilePath, json);
+
+                _logger.Info($"Saved {_players.Count} player(s) to '{_dataFilePath}'.");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("Error while saving data file: " + ex.Message);
+            }
+        }
+
+        // ----------------- Basic operations -----------------
+
+        // Add a new player with validation.
+    
         public Player AddPlayer(string username, bool isPro)
         {
             if (string.IsNullOrWhiteSpace(username))
                 throw new Exception("Username cannot be empty.");
 
+            // Avoid duplicate usernames (case insensitive).
             foreach (var p in _players)
             {
                 if (p.Username.Equals(username, StringComparison.OrdinalIgnoreCase))
@@ -26,18 +112,22 @@ namespace GameManager.Services
 
             if (isPro)
             {
-            
                 newPlayer = new ProPlayer();
             }
             else
             {
-                // create a normal Player
                 newPlayer = new Player();
             }
 
             newPlayer.Username = username.Trim();
 
             _players.Add(newPlayer);
+
+            _logger.Info($"Added player '{newPlayer.Username}' (ID: {newPlayer.Id}) (Pro: {isPro})");
+
+            // AUTO-SAVE after adding a player
+            SaveToFile();
+
             return newPlayer;
         }
 
@@ -73,6 +163,7 @@ namespace GameManager.Services
             Player target = GetById(playerId);
             if (target == null)
             {
+                _logger.Warning($"Tried to update stats for ID {playerId} but player was not found.");
                 return false; // player not found
             }
 
@@ -82,14 +173,18 @@ namespace GameManager.Services
             if (newHighScore.HasValue && newHighScore.Value < 0)
                 throw new Exception("High score cannot be negative.");
 
-            // add hours
             target.HoursPlayed += hoursToAdd;
 
-            // only update high score if provided and actually higher
             if (newHighScore.HasValue && newHighScore.Value > target.HighScore)
             {
                 target.HighScore = newHighScore.Value;
             }
+
+            _logger.Info($"Updated stats for '{target.Username}' (ID: {target.Id}). " +
+                         $"Hours: {target.HoursPlayed}, Score: {target.HighScore}");
+
+            // AUTO-SAVE after updating stats
+            SaveToFile();
 
             return true;
         }
@@ -117,13 +212,13 @@ namespace GameManager.Services
             return results;
         }
 
+        // Get top N players sorted by high score (descending),
         // using a manual insertion sort on a copy of the list.
         public List<Player> GetTopByHighScore(int topN)
         {
             if (topN <= 0)
                 return new List<Player>();
 
-            // Work on a copy so we do not break original order.
             List<Player> copy = new List<Player>(_players);
 
             // Insertion sort (descending by HighScore).
@@ -132,7 +227,6 @@ namespace GameManager.Services
                 Player current = copy[i];
                 int j = i - 1;
 
-                // move items that are smaller to the right
                 while (j >= 0 && copy[j].HighScore < current.HighScore)
                 {
                     copy[j + 1] = copy[j];
@@ -142,7 +236,6 @@ namespace GameManager.Services
                 copy[j + 1] = current;
             }
 
-            // Take top N items (or all if fewer).
             if (topN > copy.Count)
                 topN = copy.Count;
 
