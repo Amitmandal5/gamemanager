@@ -65,18 +65,81 @@ namespace GameManager.ConsoleApp
             }
         }
 
+        // IMPROVED: Add player with more information.
         private void AddPlayerFlow()
         {
             Console.Write("Enter username: ");
-            string username = Console.ReadLine();
+            string username = Console.ReadLine() ?? "";
+
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                Console.WriteLine("Username cannot be empty.");
+                return;
+            }
 
             Console.Write("Is this a pro player? (y/n): ");
             string proInput = (Console.ReadLine() ?? "").Trim().ToLower();
             bool isPro = (proInput == "y" || proInput == "yes");
 
+            // Ask for starting hours played
+            Console.Write("Starting hours played (leave empty for 0): ");
+            string hoursText = Console.ReadLine();
+            int startingHours = 0;
+            if (!string.IsNullOrWhiteSpace(hoursText))
+            {
+                if (!int.TryParse(hoursText, out startingHours) || startingHours < 0)
+                {
+                    Console.WriteLine("Hours must be a non-negative whole number.");
+                    return;
+                }
+            }
+
+            // Ask for starting high score
+            Console.Write("Starting high score (leave empty for 0): ");
+            string scoreText = Console.ReadLine();
+            int startingScore = 0;
+            if (!string.IsNullOrWhiteSpace(scoreText))
+            {
+                if (!int.TryParse(scoreText, out startingScore) || startingScore < 0)
+                {
+                    Console.WriteLine("High score must be a non-negative whole number.");
+                    return;
+                }
+            }
+
+            // If pro player, ask for team name (optional)
+            string teamName = "No Team";
+            if (isPro)
+            {
+                Console.Write("Team name (optional, leave empty for 'No Team'): ");
+                string inputTeam = Console.ReadLine() ?? "";
+                if (!string.IsNullOrWhiteSpace(inputTeam))
+                {
+                    teamName = inputTeam.Trim();
+                }
+            }
+
             try
             {
+                // First create the player object
                 Player p = _repo.AddPlayer(username, isPro);
+
+                // Set starting stats (auto-save happens inside UpdateStats)
+                if (startingHours > 0 || startingScore > 0)
+                {
+                    _repo.UpdateStats(p.Id, startingHours, startingScore);
+                    // reload to see updates
+                    p = _repo.GetById(p.Id);
+                }
+
+                // If pro, try to set the team name
+                if (isPro && p is ProPlayer pro)
+                {
+                    pro.TeamName = teamName;
+                    // After changing team name, save again to JSON
+                    _repo.SaveToFile();
+                }
+
                 Console.WriteLine("Player added successfully!");
                 Console.WriteLine(p);
             }

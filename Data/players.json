@@ -4,5 +4,11 @@
     "Username": "warrior",
     "HoursPlayed": 0,
     "HighScore": 0
+  },
+  {
+    "Id": "b01ba23a-6e9c-4a7a-ba2a-f08c71795ba1",
+    "Username": "john",
+    "HoursPlayed": 0,
+    "HighScore": 0
   }
 ]
