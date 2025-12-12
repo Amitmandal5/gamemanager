@@ -9,3 +9,12 @@
 [2025-12-12 08:57:42] [INFO] Updated stats for 'peter' (ID: 57803d8b-a660-491c-9354-176685b85192). Hours: 12, Score: 32
 [2025-12-12 08:57:42] [INFO] Saved 1 player(s) to 'Data/players.json'.
 [2025-12-12 08:57:42] [INFO] Saved 1 player(s) to 'Data/players.json'.
+[2025-12-12 09:06:10] [INFO] Loaded 1 player(s) from 'C:\Users\hp\GameManager\bin\Debug\net9.0\Data\players.json'.
+[2025-12-12 09:06:10] [INFO] Application started.
+[2025-12-12 09:08:45] [INFO] Added player 'oliver' (ID: d737cd45-5271-4435-86a7-d03a9d7fcb31) (Pro: True)
+[2025-12-12 09:08:45] [INFO] Saved 2 player(s) to 'C:\Users\hp\GameManager\bin\Debug\net9.0\Data\players.json'.
+[2025-12-12 09:08:45] [INFO] Updated stats for 'oliver' (ID: d737cd45-5271-4435-86a7-d03a9d7fcb31). Hours: 12, Score: 23
+[2025-12-12 09:08:45] [INFO] Saved 2 player(s) to 'C:\Users\hp\GameManager\bin\Debug\net9.0\Data\players.json'.
+[2025-12-12 09:08:45] [INFO] Saved 2 player(s) to 'C:\Users\hp\GameManager\bin\Debug\net9.0\Data\players.json'.
+[2025-12-12 09:10:25] [INFO] Loaded 2 player(s) from 'C:\Users\hp\GameManager\bin\Debug\net9.0\Data\players.json'.
+[2025-12-12 09:10:25] [INFO] Application started.

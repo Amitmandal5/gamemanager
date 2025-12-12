@@ -7,7 +7,8 @@ using GameManager.Models;
 
 namespace GameManager.Services
 {
-   
+    // Repository responsible for storing and managing players.
+    // Supports JSON saving/loading, logging, search and sorting.
     public class PlayerRepository
     {
         private List<Player> _players = new List<Player>();
@@ -19,7 +20,7 @@ namespace GameManager.Services
             _logger = logger;
             _dataFilePath = dataFilePath;
 
-            // Make sure data folder exists.
+            // Make sure the folder exists for the data file.
             string? folder = Path.GetDirectoryName(_dataFilePath);
             if (!string.IsNullOrWhiteSpace(folder) && !Directory.Exists(folder))
             {
@@ -48,10 +49,7 @@ namespace GameManager.Services
                 }
 
                 var loaded = JsonSerializer.Deserialize<List<Player>>(json,
-                    new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                 if (loaded == null)
                 {
@@ -95,7 +93,7 @@ namespace GameManager.Services
         // ----------------- Basic operations -----------------
 
         // Add a new player with validation.
-    
+        // isPro = true means create a ProPlayer instead of normal Player.
         public Player AddPlayer(string username, bool isPro)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -125,13 +123,13 @@ namespace GameManager.Services
 
             _logger.Info($"Added player '{newPlayer.Username}' (ID: {newPlayer.Id}) (Pro: {isPro})");
 
-            // AUTO-SAVE after adding a player
+            // Auto-save after adding a player
             SaveToFile();
 
             return newPlayer;
         }
 
-        // Overload for backward compatibility if needed.
+        // Overload (not used by menu, but kept in case).
         public Player AddPlayer(string username)
         {
             return AddPlayer(username, false);
@@ -144,7 +142,7 @@ namespace GameManager.Services
         }
 
         // Find a player by their Guid ID. Returns null if not found.
-        public Player GetById(Guid id)
+        public Player? GetById(Guid id)
         {
             foreach (var p in _players)
             {
@@ -155,12 +153,12 @@ namespace GameManager.Services
             return null;
         }
 
-        // Update stats for a player:
-        // - hoursToAdd: how many hours to add to existing value
-        // - newHighScore: optional, only used if it has a value
+        // Update stats for a player.
+        // hoursToAdd: how many hours to add to existing value
+        // newHighScore: optional, only used if it has a value
         public bool UpdateStats(Guid playerId, int hoursToAdd, int? newHighScore)
         {
-            Player target = GetById(playerId);
+            Player? target = GetById(playerId);
             if (target == null)
             {
                 _logger.Warning($"Tried to update stats for ID {playerId} but player was not found.");
@@ -183,14 +181,16 @@ namespace GameManager.Services
             _logger.Info($"Updated stats for '{target.Username}' (ID: {target.Id}). " +
                          $"Hours: {target.HoursPlayed}, Score: {target.HighScore}");
 
-            // AUTO-SAVE after updating stats
+            // Auto-save after updating stats
             SaveToFile();
 
             return true;
         }
 
+        // ----------------- Search and algorithms -----------------
+
         // Search by username (case-insensitive, partial match).
-        // This is a simple linear search algorithm.
+        // Simple linear search.
         public List<Player> SearchByUsername(string term)
         {
             List<Player> results = new List<Player>();
@@ -212,8 +212,7 @@ namespace GameManager.Services
             return results;
         }
 
-        // Get top N players sorted by high score (descending),
-        // using a manual insertion sort on a copy of the list.
+        // Manual insertion sort by high score (descending).
         public List<Player> GetTopByHighScore(int topN)
         {
             if (topN <= 0)
@@ -221,7 +220,6 @@ namespace GameManager.Services
 
             List<Player> copy = new List<Player>(_players);
 
-            // Insertion sort (descending by HighScore).
             for (int i = 1; i < copy.Count; i++)
             {
                 Player current = copy[i];
@@ -242,7 +240,7 @@ namespace GameManager.Services
             return copy.GetRange(0, topN);
         }
 
-        // Get top N most active players (by HoursPlayed) using built-in sort.
+        // Built-in sort example: most active by hours played.
         public List<Player> GetMostActiveByHours(int topN)
         {
             if (topN <= 0)

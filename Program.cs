@@ -1,4 +1,6 @@
-﻿using GameManager.Services;
+﻿using System;
+using System.IO;
+using GameManager.Services;
 using GameManager.ConsoleApp;
 
 namespace GameManager
@@ -7,22 +9,30 @@ namespace GameManager
     {
         static void Main(string[] args)
         {
-            // log.txt will be placed inside "Data" folder.
-            Logger logger = new Logger("Data/log.txt");
+            // Base folder where the .exe is running from
+            string baseDir = AppContext.BaseDirectory;
 
-            // players.json will also be stored in "Data" folder.
-            PlayerRepository repo = new PlayerRepository(logger, "Data/players.json");
+            // Put both log and json inside a "Data" folder next to the exe
+            string dataDir = Path.Combine(baseDir, "Data");
+            Directory.CreateDirectory(dataDir);
 
-            // Load existing data (if file exists).
+            string logPath = Path.Combine(dataDir, "log.txt");
+            string jsonPath = Path.Combine(dataDir, "players.json");
+
+            // Create logger and repository using these absolute paths
+            Logger logger = new Logger(logPath);
+            PlayerRepository repo = new PlayerRepository(logger, jsonPath);
+
+            // Load any existing players from file
             repo.LoadFromFile();
 
             ConsoleMenu menu = new ConsoleMenu(repo);
-
             logger.Info("Application started.");
 
+            // Run main menu loop
             menu.Show();
 
-            // Save data when the user exits the menu.
+            // Extra safety save when closing
             repo.SaveToFile();
             logger.Info("Application closed.");
         }

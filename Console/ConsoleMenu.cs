@@ -8,7 +8,7 @@ namespace GameManager.ConsoleApp
     // Simple text menu to interact with the player system.
     public class ConsoleMenu
     {
-        private PlayerRepository _repo;
+        private readonly PlayerRepository _repo;
 
         public ConsoleMenu(PlayerRepository repo)
         {
@@ -25,12 +25,12 @@ namespace GameManager.ConsoleApp
                 Console.WriteLine("1. Add Player");
                 Console.WriteLine("2. List All Players");
                 Console.WriteLine("3. Update Player Stats");
-                Console.WriteLine("4. Search Players");
+                Console.WriteLine("4. Search Player (ID or Username)");
                 Console.WriteLine("5. Reports (Top / Active)");
                 Console.WriteLine("0. Exit");
                 Console.Write("Choose option: ");
 
-                string input = Console.ReadLine();
+                string? input = Console.ReadLine();
 
                 switch (input)
                 {
@@ -47,7 +47,7 @@ namespace GameManager.ConsoleApp
                         break;
 
                     case "4":
-                        SearchPlayersFlow();
+                        SearchPlayerFlow();
                         break;
 
                     case "5":
@@ -65,7 +65,7 @@ namespace GameManager.ConsoleApp
             }
         }
 
-        // IMPROVED: Add player with more information.
+        // -------- Add Player (improved) --------
         private void AddPlayerFlow()
         {
             Console.Write("Enter username: ");
@@ -81,9 +81,9 @@ namespace GameManager.ConsoleApp
             string proInput = (Console.ReadLine() ?? "").Trim().ToLower();
             bool isPro = (proInput == "y" || proInput == "yes");
 
-            // Ask for starting hours played
+            // Starting hours
             Console.Write("Starting hours played (leave empty for 0): ");
-            string hoursText = Console.ReadLine();
+            string? hoursText = Console.ReadLine();
             int startingHours = 0;
             if (!string.IsNullOrWhiteSpace(hoursText))
             {
@@ -94,9 +94,9 @@ namespace GameManager.ConsoleApp
                 }
             }
 
-            // Ask for starting high score
+            // Starting high score
             Console.Write("Starting high score (leave empty for 0): ");
-            string scoreText = Console.ReadLine();
+            string? scoreText = Console.ReadLine();
             int startingScore = 0;
             if (!string.IsNullOrWhiteSpace(scoreText))
             {
@@ -107,12 +107,12 @@ namespace GameManager.ConsoleApp
                 }
             }
 
-            // If pro player, ask for team name (optional)
+            // Team for pro players
             string teamName = "No Team";
             if (isPro)
             {
                 Console.Write("Team name (optional, leave empty for 'No Team'): ");
-                string inputTeam = Console.ReadLine() ?? "";
+                string? inputTeam = Console.ReadLine();
                 if (!string.IsNullOrWhiteSpace(inputTeam))
                 {
                     teamName = inputTeam.Trim();
@@ -121,23 +121,21 @@ namespace GameManager.ConsoleApp
 
             try
             {
-                // First create the player object
+                // Create the player
                 Player p = _repo.AddPlayer(username, isPro);
 
-                // Set starting stats (auto-save happens inside UpdateStats)
+                // Set initial stats (this will auto-save as well)
                 if (startingHours > 0 || startingScore > 0)
                 {
                     _repo.UpdateStats(p.Id, startingHours, startingScore);
-                    // reload to see updates
-                    p = _repo.GetById(p.Id);
+                    p = _repo.GetById(p.Id)!;
                 }
 
-                // If pro, try to set the team name
+                // If pro, set team name
                 if (isPro && p is ProPlayer pro)
                 {
                     pro.TeamName = teamName;
-                    // After changing team name, save again to JSON
-                    _repo.SaveToFile();
+                    _repo.SaveToFile();  // save again to record team name
                 }
 
                 Console.WriteLine("Player added successfully!");
@@ -149,6 +147,7 @@ namespace GameManager.ConsoleApp
             }
         }
 
+        // -------- List players --------
         private void ShowPlayers()
         {
             var players = _repo.GetAllPlayers();
@@ -165,10 +164,11 @@ namespace GameManager.ConsoleApp
             }
         }
 
+        // -------- Update stats --------
         private void UpdatePlayerStatsFlow()
         {
             Console.Write("Enter player ID: ");
-            string idText = Console.ReadLine();
+            string? idText = Console.ReadLine();
 
             if (!Guid.TryParse(idText, out Guid id))
             {
@@ -177,7 +177,7 @@ namespace GameManager.ConsoleApp
             }
 
             Console.Write("Hours to add (can be 0): ");
-            string hoursText = Console.ReadLine();
+            string? hoursText = Console.ReadLine();
             if (!int.TryParse(hoursText, out int hoursToAdd))
             {
                 Console.WriteLine("Hours must be a whole number.");
@@ -185,7 +185,7 @@ namespace GameManager.ConsoleApp
             }
 
             Console.Write("New high score (leave empty to keep current): ");
-            string scoreText = Console.ReadLine();
+            string? scoreText = Console.ReadLine();
             int? newHighScore = null;
 
             if (!string.IsNullOrWhiteSpace(scoreText))
@@ -209,8 +209,11 @@ namespace GameManager.ConsoleApp
                 }
 
                 Console.WriteLine("Player stats updated successfully.");
-                Player p = _repo.GetById(id);
-                Console.WriteLine(p);
+                Player? p = _repo.GetById(id);
+                if (p != null)
+                {
+                    Console.WriteLine(p);
+                }
             }
             catch (Exception ex)
             {
@@ -218,57 +221,36 @@ namespace GameManager.ConsoleApp
             }
         }
 
-        private void SearchPlayersFlow()
+        // -------- Search (ID or username in one screen) --------
+        private void SearchPlayerFlow()
         {
-            Console.WriteLine("\nSearch by:");
-            Console.WriteLine("1. ID");
-            Console.WriteLine("2. Username");
-            Console.Write("Choose: ");
-            string choice = Console.ReadLine();
+            Console.Write("Enter player ID or username/part of username: ");
+            string input = (Console.ReadLine() ?? "").Trim();
 
-            if (choice == "1")
+            if (string.IsNullOrWhiteSpace(input))
             {
-                SearchByIdFlow();
-            }
-            else if (choice == "2")
-            {
-                SearchByUsernameFlow();
-            }
-            else
-            {
-                Console.WriteLine("Invalid search choice.");
-            }
-        }
-
-        private void SearchByIdFlow()
-        {
-            Console.Write("Enter player ID: ");
-            string idText = Console.ReadLine();
-
-            if (!Guid.TryParse(idText, out Guid id))
-            {
-                Console.WriteLine("Invalid ID format.");
+                Console.WriteLine("You must type something.");
                 return;
             }
 
-            Player p = _repo.GetById(id);
-            if (p == null)
+            // Try to treat input as ID first
+            if (Guid.TryParse(input, out Guid id))
             {
-                Console.WriteLine("No player found with that ID.");
+                Player? byId = _repo.GetById(id);
+                if (byId == null)
+                {
+                    Console.WriteLine("No player found with that ID.");
+                }
+                else
+                {
+                    Console.WriteLine("Player found:");
+                    Console.WriteLine(byId);
+                }
+                return;
             }
-            else
-            {
-                Console.WriteLine("Player found:");
-                Console.WriteLine(p);
-            }
-        }
 
-        private void SearchByUsernameFlow()
-        {
-            Console.Write("Enter username or part of it: ");
-            string term = Console.ReadLine();
-
-            List<Player> results = _repo.SearchByUsername(term);
+            // Otherwise treat as username search
+            List<Player> results = _repo.SearchByUsername(input);
 
             if (results.Count == 0)
             {
@@ -283,11 +265,12 @@ namespace GameManager.ConsoleApp
             }
         }
 
+        // -------- Reports (sorting demo) --------
         private void ReportsFlow()
         {
             Console.WriteLine("\n=== Reports ===");
             Console.Write("How many top players do you want to see? ");
-            string input = Console.ReadLine();
+            string? input = Console.ReadLine();
 
             if (!int.TryParse(input, out int n) || n <= 0)
             {

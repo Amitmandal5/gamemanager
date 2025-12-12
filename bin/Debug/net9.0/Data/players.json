@@ -4,5 +4,11 @@
     "Username": "peter",
     "HoursPlayed": 12,
     "HighScore": 32
+  },
+  {
+    "Id": "d737cd45-5271-4435-86a7-d03a9d7fcb31",
+    "Username": "oliver",
+    "HoursPlayed": 12,
+    "HighScore": 23
   }
 ]
