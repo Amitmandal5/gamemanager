@@ -92,7 +92,25 @@ namespace GameManager.Services
             return p;
         }
 
-        // ---------------- GET ALL PLAYERS (FIX ADDED HERE) ----------------
+        // ---------------- UPDATE PLAYER (NEW FEATURE) ----------------
+        public bool UpdatePlayer(Guid id, int hours, int score, string team, double rating)
+        {
+            var player = GetById(id);
+            if (player == null)
+                return false;
+
+            player.HoursPlayed = hours;
+            player.HighScore = score;
+            player.Team = team;
+            player.Rating = rating;
+
+            SaveToFile();
+            _logger.Info($"Updated player: {player.Username}");
+
+            return true;
+        }
+
+        // ---------------- GET ALL PLAYERS ----------------
         public List<Player> GetAllPlayers()
         {
             return _players;
@@ -160,10 +178,12 @@ namespace GameManager.Services
             return arr;
         }
 
-        // ---------------- SORT BY HOURS PLAYED (Built-in) ----------------
+        // ---------------- SORT BY HOURS PLAYED ----------------
         public List<Player> SortByHours()
         {
-            return _players.OrderByDescending(p => p.HoursPlayed).ToList();
+            return _players
+                .OrderByDescending(p => p.HoursPlayed)
+                .ToList();
         }
 
         // ---------------- REPORT GENERATION ----------------

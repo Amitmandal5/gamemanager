@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\hp\\GameManager\\GameManager.csproj",
+      "projectUniqueName": "c:\\Users\\hp\\Desktop\\gamemanager\\GameManager.csproj",
       "projectName": "GameManager",
-      "projectPath": "C:\\Users\\hp\\GameManager\\GameManager.csproj",
+      "projectPath": "c:\\Users\\hp\\Desktop\\gamemanager\\GameManager.csproj",
       "packagesPath": "C:\\Users\\hp\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\hp\\GameManager\\obj\\",
+      "outputPath": "c:\\Users\\hp\\Desktop\\gamemanager\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\hp\\AppData\\Roaming\\NuGet\\NuGet.Config"
