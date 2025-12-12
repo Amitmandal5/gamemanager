@@ -7,11 +7,9 @@ using GameManager.Models;
 
 namespace GameManager.Services
 {
-    // Repository responsible for storing and managing players.
-    // Supports JSON saving/loading, logging, search and sorting.
     public class PlayerRepository
     {
-        private List<Player> _players = new List<Player>();
+        private List<Player> _players = new();
         private readonly Logger _logger;
         private readonly string _dataFilePath;
 
@@ -20,53 +18,34 @@ namespace GameManager.Services
             _logger = logger;
             _dataFilePath = dataFilePath;
 
-            // Make sure the folder exists for the data file.
             string? folder = Path.GetDirectoryName(_dataFilePath);
             if (!string.IsNullOrWhiteSpace(folder) && !Directory.Exists(folder))
-            {
                 Directory.CreateDirectory(folder);
-            }
         }
 
-        // ----------------- JSON persistence -----------------
-
+        // ---------------- LOAD + SAVE JSON ----------------
         public void LoadFromFile()
         {
             if (!File.Exists(_dataFilePath))
             {
-                _logger.Info($"Data file '{_dataFilePath}' not found. Starting with empty list.");
+                _logger.Info("No player file found. Starting empty.");
                 return;
             }
 
             try
             {
                 string json = File.ReadAllText(_dataFilePath);
+                var data = JsonSerializer.Deserialize<List<Player>>(json);
 
-                if (string.IsNullOrWhiteSpace(json))
+                if (data != null)
                 {
-                    _logger.Warning($"Data file '{_dataFilePath}' is empty. No players loaded.");
-                    return;
+                    _players = data;
+                    _logger.Info($"Loaded {_players.Count} players.");
                 }
-
-                var loaded = JsonSerializer.Deserialize<List<Player>>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                if (loaded == null)
-                {
-                    _logger.Warning("Could not deserialize players. Starting with empty list.");
-                    return;
-                }
-
-                _players = loaded;
-                _logger.Info($"Loaded {_players.Count} player(s) from '{_dataFilePath}'.");
-            }
-            catch (JsonException ex)
-            {
-                _logger.Error("JSON in data file is not valid: " + ex.Message);
             }
             catch (Exception ex)
             {
-                _logger.Error("Error while reading data file: " + ex.Message);
+                _logger.Error("Error loading JSON: " + ex.Message);
             }
         }
 
@@ -74,186 +53,174 @@ namespace GameManager.Services
         {
             try
             {
-                var options = new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                };
+                string json = JsonSerializer.Serialize(
+                    _players,
+                    new JsonSerializerOptions { WriteIndented = true }
+                );
 
-                string json = JsonSerializer.Serialize(_players, options);
                 File.WriteAllText(_dataFilePath, json);
-
-                _logger.Info($"Saved {_players.Count} player(s) to '{_dataFilePath}'.");
+                _logger.Info("Saved players successfully.");
             }
             catch (Exception ex)
             {
-                _logger.Error("Error while saving data file: " + ex.Message);
+                _logger.Error("Error saving JSON: " + ex.Message);
             }
         }
 
-        // ----------------- Basic operations -----------------
-
-        // Add a new player with validation.
-        // isPro = true means create a ProPlayer instead of normal Player.
-        public Player AddPlayer(string username, bool isPro)
+        // ---------------- ADD PLAYER ----------------
+        public Player AddPlayer(string username, int hours, int score, string team, double rating)
         {
             if (string.IsNullOrWhiteSpace(username))
                 throw new Exception("Username cannot be empty.");
 
-            // Avoid duplicate usernames (case insensitive).
-            foreach (var p in _players)
+            if (string.IsNullOrWhiteSpace(team))
+                throw new Exception("Team name is required.");
+
+            Player p = new Player
             {
-                if (p.Username.Equals(username, StringComparison.OrdinalIgnoreCase))
-                    throw new Exception("This username already exists.");
-            }
+                Username = username.Trim(),
+                HoursPlayed = hours,
+                HighScore = score,
+                Team = team.Trim(),
+                Rating = rating
+            };
 
-            Player newPlayer;
-
-            if (isPro)
-            {
-                newPlayer = new ProPlayer();
-            }
-            else
-            {
-                newPlayer = new Player();
-            }
-
-            newPlayer.Username = username.Trim();
-
-            _players.Add(newPlayer);
-
-            _logger.Info($"Added player '{newPlayer.Username}' (ID: {newPlayer.Id}) (Pro: {isPro})");
-
-            // Auto-save after adding a player
+            _players.Add(p);
             SaveToFile();
+            _logger.Info("Added new player: " + username);
 
-            return newPlayer;
+            return p;
         }
 
-        // Overload (not used by menu, but kept in case).
-        public Player AddPlayer(string username)
-        {
-            return AddPlayer(username, false);
-        }
-
-        // Get all players.
+        // ---------------- GET ALL PLAYERS (FIX ADDED HERE) ----------------
         public List<Player> GetAllPlayers()
         {
             return _players;
         }
 
-        // Find a player by their Guid ID. Returns null if not found.
+        // ---------------- SEARCH ----------------
         public Player? GetById(Guid id)
         {
-            foreach (var p in _players)
-            {
-                if (p.Id == id)
-                    return p;
-            }
-
-            return null;
+            return _players.FirstOrDefault(p => p.Id == id);
         }
 
-        // Update stats for a player.
-        // hoursToAdd: how many hours to add to existing value
-        // newHighScore: optional, only used if it has a value
-        public bool UpdateStats(Guid playerId, int hoursToAdd, int? newHighScore)
+        public List<Player> Search(string term)
         {
-            Player? target = GetById(playerId);
-            if (target == null)
-            {
-                _logger.Warning($"Tried to update stats for ID {playerId} but player was not found.");
-                return false; // player not found
-            }
-
-            if (hoursToAdd < 0)
-                throw new Exception("Hours to add cannot be negative.");
-
-            if (newHighScore.HasValue && newHighScore.Value < 0)
-                throw new Exception("High score cannot be negative.");
-
-            target.HoursPlayed += hoursToAdd;
-
-            if (newHighScore.HasValue && newHighScore.Value > target.HighScore)
-            {
-                target.HighScore = newHighScore.Value;
-            }
-
-            _logger.Info($"Updated stats for '{target.Username}' (ID: {target.Id}). " +
-                         $"Hours: {target.HoursPlayed}, Score: {target.HighScore}");
-
-            // Auto-save after updating stats
-            SaveToFile();
-
-            return true;
-        }
-
-        // ----------------- Search and algorithms -----------------
-
-        // Search by username (case-insensitive, partial match).
-        // Simple linear search.
-        public List<Player> SearchByUsername(string term)
-        {
-            List<Player> results = new List<Player>();
-
             if (string.IsNullOrWhiteSpace(term))
-                return results;
+                return new();
 
-            string lowerTerm = term.Trim().ToLower();
+            term = term.ToLower();
 
-            foreach (var p in _players)
-            {
-                string name = (p.Username ?? "").ToLower();
-                if (name.Contains(lowerTerm))
-                {
-                    results.Add(p);
-                }
-            }
-
-            return results;
+            return _players
+                .Where(p => p.Username.ToLower().Contains(term))
+                .ToList();
         }
 
-        // Manual insertion sort by high score (descending).
-        public List<Player> GetTopByHighScore(int topN)
+        // ---------------- SORT BY RATING (Insertion Sort) ----------------
+        public List<Player> SortByRating()
         {
-            if (topN <= 0)
-                return new List<Player>();
+            List<Player> arr = new(_players);
 
-            List<Player> copy = new List<Player>(_players);
-
-            for (int i = 1; i < copy.Count; i++)
+            for (int i = 1; i < arr.Count; i++)
             {
-                Player current = copy[i];
+                Player current = arr[i];
                 int j = i - 1;
 
-                while (j >= 0 && copy[j].HighScore < current.HighScore)
+                while (j >= 0 && arr[j].Rating < current.Rating)
                 {
-                    copy[j + 1] = copy[j];
+                    arr[j + 1] = arr[j];
                     j--;
                 }
 
-                copy[j + 1] = current;
+                arr[j + 1] = current;
             }
 
-            if (topN > copy.Count)
-                topN = copy.Count;
-
-            return copy.GetRange(0, topN);
+            return arr;
         }
 
-        // Built-in sort example: most active by hours played.
-        public List<Player> GetMostActiveByHours(int topN)
+        // ---------------- SORT BY HIGH SCORE (Insertion Sort) ----------------
+        public List<Player> SortByHighScore()
         {
-            if (topN <= 0)
-                return new List<Player>();
+            List<Player> arr = new(_players);
 
-            var sorted = _players
-                .OrderByDescending(p => p.HoursPlayed)
-                .ToList();
+            for (int i = 1; i < arr.Count; i++)
+            {
+                Player current = arr[i];
+                int j = i - 1;
 
-            if (topN > sorted.Count)
-                topN = sorted.Count;
+                while (j >= 0 && arr[j].HighScore < current.HighScore)
+                {
+                    arr[j + 1] = arr[j];
+                    j--;
+                }
 
-            return sorted.GetRange(0, topN);
+                arr[j + 1] = current;
+            }
+
+            return arr;
+        }
+
+        // ---------------- SORT BY HOURS PLAYED (Built-in) ----------------
+        public List<Player> SortByHours()
+        {
+            return _players.OrderByDescending(p => p.HoursPlayed).ToList();
+        }
+
+        // ---------------- REPORT GENERATION ----------------
+        public string GenerateReport()
+        {
+            string path = Path.Combine(
+                Path.GetDirectoryName(_dataFilePath)!,
+                "report.txt"
+            );
+
+            using (StreamWriter writer = new StreamWriter(path))
+            {
+                writer.WriteLine("=== PLAYER REPORT ===");
+                writer.WriteLine($"Generated: {DateTime.Now}");
+                writer.WriteLine();
+
+                writer.WriteLine("--- MOST ACTIVE PLAYERS (Hours Played) ---");
+                foreach (var p in SortByHours())
+                    writer.WriteLine(p);
+
+                writer.WriteLine();
+                writer.WriteLine("--- TOP RATED PLAYERS ---");
+                foreach (var p in SortByRating())
+                    writer.WriteLine(p);
+
+                writer.WriteLine();
+                writer.WriteLine("--- TOP HIGH SCORE PLAYERS ---");
+                foreach (var p in SortByHighScore())
+                    writer.WriteLine(p);
+            }
+
+            _logger.Info("Report generated.");
+            return path;
+        }
+
+        // ---------------- EXPORT CSV ----------------
+        public string ExportCSV()
+        {
+            string path = Path.Combine(
+                Path.GetDirectoryName(_dataFilePath)!,
+                "report.csv"
+            );
+
+            using (StreamWriter writer = new StreamWriter(path))
+            {
+                writer.WriteLine("Id,Username,HoursPlayed,HighScore,Rating");
+
+                foreach (var p in SortByHours())
+                {
+                    writer.WriteLine(
+                        $"{p.Id},{p.Username},{p.HoursPlayed},{p.HighScore},{p.Rating}"
+                    );
+                }
+            }
+
+            _logger.Info("CSV exported.");
+            return path;
         }
     }
 }

@@ -1,0 +1,17 @@
+=== PLAYER REPORT ===
+Generated: 12/12/2025 11:54:37 AM
+
+--- MOST ACTIVE PLAYERS (Hours Played) ---
+9566f604-ba54-47f6-94ca-63d2080654b0 | thomas | Hours: 21 | Score: 21 | Team:  | Rating: 0
+57803d8b-a660-491c-9354-176685b85192 | peter | Hours: 12 | Score: 32 | Team:  | Rating: 0
+d737cd45-5271-4435-86a7-d03a9d7fcb31 | oliver | Hours: 12 | Score: 23 | Team:  | Rating: 0
+
+--- TOP RATED PLAYERS ---
+57803d8b-a660-491c-9354-176685b85192 | peter | Hours: 12 | Score: 32 | Team:  | Rating: 0
+d737cd45-5271-4435-86a7-d03a9d7fcb31 | oliver | Hours: 12 | Score: 23 | Team:  | Rating: 0
+9566f604-ba54-47f6-94ca-63d2080654b0 | thomas | Hours: 21 | Score: 21 | Team:  | Rating: 0
+
+--- TOP HIGH SCORE PLAYERS ---
+57803d8b-a660-491c-9354-176685b85192 | peter | Hours: 12 | Score: 32 | Team:  | Rating: 0
+d737cd45-5271-4435-86a7-d03a9d7fcb31 | oliver | Hours: 12 | Score: 23 | Team:  | Rating: 0
+9566f604-ba54-47f6-94ca-63d2080654b0 | thomas | Hours: 21 | Score: 21 | Team:  | Rating: 0

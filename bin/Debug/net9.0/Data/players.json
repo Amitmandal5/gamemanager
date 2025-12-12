@@ -3,12 +3,32 @@
     "Id": "57803d8b-a660-491c-9354-176685b85192",
     "Username": "peter",
     "HoursPlayed": 12,
-    "HighScore": 32
+    "HighScore": 32,
+    "Team": "",
+    "Rating": 0
   },
   {
     "Id": "d737cd45-5271-4435-86a7-d03a9d7fcb31",
     "Username": "oliver",
     "HoursPlayed": 12,
-    "HighScore": 23
+    "HighScore": 23,
+    "Team": "",
+    "Rating": 0
+  },
+  {
+    "Id": "9566f604-ba54-47f6-94ca-63d2080654b0",
+    "Username": "thomas",
+    "HoursPlayed": 21,
+    "HighScore": 21,
+    "Team": "",
+    "Rating": 0
+  },
+  {
+    "Id": "5116e135-5628-4072-b3e6-864fc1ec6e97",
+    "Username": "James",
+    "HoursPlayed": 2,
+    "HighScore": 12,
+    "Team": "cricket",
+    "Rating": 2
   }
 ]

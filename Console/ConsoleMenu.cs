@@ -1,11 +1,9 @@
 using System;
-using System.Collections.Generic;
 using GameManager.Services;
 using GameManager.Models;
 
 namespace GameManager.ConsoleApp
 {
-    // Simple text menu to interact with the player system.
     public class ConsoleMenu
     {
         private readonly PlayerRepository _repo;
@@ -17,144 +15,119 @@ namespace GameManager.ConsoleApp
 
         public void Show()
         {
-            bool running = true;
+            bool run = true;
 
-            while (running)
+            while (run)
             {
-                Console.WriteLine("\n=== Game Manager ===");
+                Console.WriteLine("\n=== GAME MANAGER ===");
                 Console.WriteLine("1. Add Player");
                 Console.WriteLine("2. List All Players");
-                Console.WriteLine("3. Update Player Stats");
-                Console.WriteLine("4. Search Player (ID or Username)");
-                Console.WriteLine("5. Reports (Top / Active)");
+                Console.WriteLine("3. Search Player (ID or Username)");
+                Console.WriteLine("4. Sorting Options");
+                Console.WriteLine("5. Generate Report");
+                Console.WriteLine("6. Export CSV");
                 Console.WriteLine("0. Exit");
-                Console.Write("Choose option: ");
+                Console.Write("Choose: ");
 
-                string? input = Console.ReadLine();
+                string? choice = Console.ReadLine();
 
-                switch (input)
+                switch (choice)
                 {
                     case "1":
                         AddPlayerFlow();
                         break;
 
                     case "2":
-                        ShowPlayers();
+                        ListPlayers();
                         break;
 
                     case "3":
-                        UpdatePlayerStatsFlow();
+                        SearchPlayer();
                         break;
 
                     case "4":
-                        SearchPlayerFlow();
+                        SortingMenu();
                         break;
 
                     case "5":
-                        ReportsFlow();
+                        GenerateReport();
+                        break;
+
+                    case "6":
+                        ExportCSV();
                         break;
 
                     case "0":
-                        running = false;
+                        run = false;
                         break;
 
                     default:
-                        Console.WriteLine("Invalid option. Try again.");
+                        Console.WriteLine("Invalid option.");
                         break;
                 }
             }
         }
 
-        // -------- Add Player (improved) --------
+        // ---------------- ADD PLAYER ----------------
         private void AddPlayerFlow()
         {
             Console.Write("Enter username: ");
-            string username = Console.ReadLine() ?? "";
-
+            string username = Console.ReadLine() ?? string.Empty;
             if (string.IsNullOrWhiteSpace(username))
             {
                 Console.WriteLine("Username cannot be empty.");
                 return;
             }
 
-            Console.Write("Is this a pro player? (y/n): ");
-            string proInput = (Console.ReadLine() ?? "").Trim().ToLower();
-            bool isPro = (proInput == "y" || proInput == "yes");
-
-            // Starting hours
-            Console.Write("Starting hours played (leave empty for 0): ");
-            string? hoursText = Console.ReadLine();
-            int startingHours = 0;
-            if (!string.IsNullOrWhiteSpace(hoursText))
+            Console.Write("Hours played: ");
+            if (!int.TryParse(Console.ReadLine(), out int hours) || hours < 0)
             {
-                if (!int.TryParse(hoursText, out startingHours) || startingHours < 0)
-                {
-                    Console.WriteLine("Hours must be a non-negative whole number.");
-                    return;
-                }
+                Console.WriteLine("Invalid hours. Please enter a non-negative number.");
+                return;
             }
 
-            // Starting high score
-            Console.Write("Starting high score (leave empty for 0): ");
-            string? scoreText = Console.ReadLine();
-            int startingScore = 0;
-            if (!string.IsNullOrWhiteSpace(scoreText))
+            Console.Write("High score: ");
+            if (!int.TryParse(Console.ReadLine(), out int score) || score < 0)
             {
-                if (!int.TryParse(scoreText, out startingScore) || startingScore < 0)
-                {
-                    Console.WriteLine("High score must be a non-negative whole number.");
-                    return;
-                }
+                Console.WriteLine("Invalid score. Please enter a non-negative number.");
+                return;
             }
 
-            // Team for pro players
-            string teamName = "No Team";
-            if (isPro)
+            Console.Write("Team: ");
+            string team = Console.ReadLine() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(team))
             {
-                Console.Write("Team name (optional, leave empty for 'No Team'): ");
-                string? inputTeam = Console.ReadLine();
-                if (!string.IsNullOrWhiteSpace(inputTeam))
-                {
-                    teamName = inputTeam.Trim();
-                }
+                Console.WriteLine("Team cannot be empty.");
+                return;
+            }
+
+            Console.Write("Rating: ");
+            if (!double.TryParse(Console.ReadLine(), out double rating))
+            {
+                Console.WriteLine("Invalid rating. Please enter a number.");
+                return;
             }
 
             try
             {
-                // Create the player
-                Player p = _repo.AddPlayer(username, isPro);
-
-                // Set initial stats (this will auto-save as well)
-                if (startingHours > 0 || startingScore > 0)
-                {
-                    _repo.UpdateStats(p.Id, startingHours, startingScore);
-                    p = _repo.GetById(p.Id)!;
-                }
-
-                // If pro, set team name
-                if (isPro && p is ProPlayer pro)
-                {
-                    pro.TeamName = teamName;
-                    _repo.SaveToFile();  // save again to record team name
-                }
-
-                Console.WriteLine("Player added successfully!");
+                Player p = _repo.AddPlayer(username, hours, score, team, rating);
+                Console.WriteLine("\nPlayer added:");
                 Console.WriteLine(p);
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Failed to add player: " + ex.Message);
+                Console.WriteLine("Could not add player: " + ex.Message);
             }
         }
 
-        // -------- List players --------
-        private void ShowPlayers()
+        // ---------------- LIST PLAYERS ----------------
+        private void ListPlayers()
         {
             var players = _repo.GetAllPlayers();
 
             if (players.Count == 0)
             {
-                Console.WriteLine("No players found.");
+                Console.WriteLine("No players available.");
                 return;
             }
 
@@ -164,147 +137,116 @@ namespace GameManager.ConsoleApp
             }
         }
 
-        // -------- Update stats --------
-        private void UpdatePlayerStatsFlow()
+        // ---------------- SEARCH PLAYER ----------------
+        private void SearchPlayer()
         {
-            Console.Write("Enter player ID: ");
-            string? idText = Console.ReadLine();
-
-            if (!Guid.TryParse(idText, out Guid id))
-            {
-                Console.WriteLine("Invalid ID format. It should be a GUID.");
-                return;
-            }
-
-            Console.Write("Hours to add (can be 0): ");
-            string? hoursText = Console.ReadLine();
-            if (!int.TryParse(hoursText, out int hoursToAdd))
-            {
-                Console.WriteLine("Hours must be a whole number.");
-                return;
-            }
-
-            Console.Write("New high score (leave empty to keep current): ");
-            string? scoreText = Console.ReadLine();
-            int? newHighScore = null;
-
-            if (!string.IsNullOrWhiteSpace(scoreText))
-            {
-                if (!int.TryParse(scoreText, out int parsedScore))
-                {
-                    Console.WriteLine("High score must be a number.");
-                    return;
-                }
-                newHighScore = parsedScore;
-            }
-
-            try
-            {
-                bool updated = _repo.UpdateStats(id, hoursToAdd, newHighScore);
-
-                if (!updated)
-                {
-                    Console.WriteLine("Player not found with that ID.");
-                    return;
-                }
-
-                Console.WriteLine("Player stats updated successfully.");
-                Player? p = _repo.GetById(id);
-                if (p != null)
-                {
-                    Console.WriteLine(p);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Failed to update stats: " + ex.Message);
-            }
-        }
-
-        // -------- Search (ID or username in one screen) --------
-        private void SearchPlayerFlow()
-        {
-            Console.Write("Enter player ID or username/part of username: ");
-            string input = (Console.ReadLine() ?? "").Trim();
+            Console.Write("Enter Player ID or Username: ");
+            string input = Console.ReadLine() ?? string.Empty;
 
             if (string.IsNullOrWhiteSpace(input))
             {
-                Console.WriteLine("You must type something.");
+                Console.WriteLine("Search term cannot be empty.");
                 return;
             }
 
-            // Try to treat input as ID first
+            // Try search by ID first
             if (Guid.TryParse(input, out Guid id))
             {
-                Player? byId = _repo.GetById(id);
-                if (byId == null)
+                var player = _repo.GetById(id);
+                if (player == null)
                 {
-                    Console.WriteLine("No player found with that ID.");
+                    Console.WriteLine("Player not found.");
                 }
                 else
                 {
-                    Console.WriteLine("Player found:");
-                    Console.WriteLine(byId);
+                    Console.WriteLine(player);
                 }
+
                 return;
             }
 
-            // Otherwise treat as username search
-            List<Player> results = _repo.SearchByUsername(input);
-
-            if (results.Count == 0)
+            // Fallback to search by username
+            var list = _repo.Search(input);
+            if (list.Count == 0)
             {
-                Console.WriteLine("No players matched your search.");
+                Console.WriteLine("Player not found.");
                 return;
             }
 
-            Console.WriteLine($"Found {results.Count} player(s):");
-            foreach (var p in results)
+            foreach (var p in list)
             {
                 Console.WriteLine(p);
             }
         }
 
-        // -------- Reports (sorting demo) --------
-        private void ReportsFlow()
+        // ---------------- SORTING MENU ----------------
+        private void SortingMenu()
         {
-            Console.WriteLine("\n=== Reports ===");
-            Console.Write("How many top players do you want to see? ");
-            string? input = Console.ReadLine();
+            Console.WriteLine("\n--- Sorting Options ---");
+            Console.WriteLine("1. Sort by Rating");
+            Console.WriteLine("2. Sort by High Score");
+            Console.WriteLine("3. Sort by Hours Played");
+            Console.Write("Choose: ");
 
-            if (!int.TryParse(input, out int n) || n <= 0)
-            {
-                Console.WriteLine("Please enter a positive whole number.");
-                return;
-            }
+            string? choice = Console.ReadLine();
 
-            var topScores = _repo.GetTopByHighScore(n);
-            var mostActive = _repo.GetMostActiveByHours(n);
+            switch (choice)
+            {
+                case "1":
+                    Console.WriteLine("\n--- Players Sorted by Rating (Highest First) ---");
+                    foreach (var p in _repo.SortByRating())
+                    {
+                        Console.WriteLine(p);
+                    }
+                    break;
 
-            Console.WriteLine("\n--- Top Players by High Score (manual sort) ---");
-            if (topScores.Count == 0)
-            {
-                Console.WriteLine("No players available.");
-            }
-            else
-            {
-                foreach (var p in topScores)
-                {
-                    Console.WriteLine(p);
-                }
-            }
+                case "2":
+                    Console.WriteLine("\n--- Players Sorted by High Score (Highest First) ---");
+                    foreach (var p in _repo.SortByHighScore())
+                    {
+                        Console.WriteLine(p);
+                    }
+                    break;
 
-            Console.WriteLine("\n--- Most Active Players by Hours (built-in sort) ---");
-            if (mostActive.Count == 0)
-            {
-                Console.WriteLine("No players available.");
+                case "3":
+                    Console.WriteLine("\n--- Players Sorted by Hours Played (Most Active First) ---");
+                    foreach (var p in _repo.SortByHours())
+                    {
+                        Console.WriteLine(p);
+                    }
+                    break;
+
+                default:
+                    Console.WriteLine("Invalid option.");
+                    break;
             }
-            else
+        }
+
+        // ---------------- REPORT ----------------
+        private void GenerateReport()
+        {
+            try
             {
-                foreach (var p in mostActive)
-                {
-                    Console.WriteLine(p);
-                }
+                string path = _repo.GenerateReport();
+                Console.WriteLine("Report generated at: " + path);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Failed to generate report: " + ex.Message);
+            }
+        }
+
+        // ---------------- EXPORT CSV ----------------
+        private void ExportCSV()
+        {
+            try
+            {
+                string path = _repo.ExportCSV();
+                Console.WriteLine("CSV exported at: " + path);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Failed to export CSV: " + ex.Message);
             }
         }
     }
