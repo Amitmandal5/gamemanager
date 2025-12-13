@@ -51,3 +51,5 @@
 [2025-12-12 22:39:03] [INFO] Updated player: James
 [2025-12-12 22:39:05] [INFO] Saved players successfully.
 [2025-12-12 22:39:05] [INFO] Application closed.
+[2025-12-13 21:59:26] [INFO] Loaded 4 players.
+[2025-12-13 21:59:26] [INFO] Application started.

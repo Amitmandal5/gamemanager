@@ -1,5 +1,3 @@
-using System;
-
 namespace GameManager.Models
 {
     // Simple interface to show that every object has an Id.

@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using GameManager.Services;
+﻿using GameManager.Services;
 using GameManager.ConsoleApp;
 
 namespace GameManager

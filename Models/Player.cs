@@ -1,5 +1,3 @@
-using System;
-
 namespace GameManager.Models
 {
     public class Player

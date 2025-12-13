@@ -1,6 +1,3 @@
-using System;
-using System.IO;
-
 namespace GameManager.Services
 {
     // Simple logger class that writes messages to console and a log file.
